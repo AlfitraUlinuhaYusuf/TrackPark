@@ -1,0 +1,200 @@
+{
+  "info": {
+    "_postman_id": "7b8e99a1-5d21-4f11-9a72-trackpark01",
+    "name": "TrackPark API",
+    "description": "Koleksi Postman lengkap untuk menguji REST API TrackPark (Zones & Vehicles)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "zoneId",
+      "value": "PASTE_ZONE_ID_HERE",
+      "type": "string"
+    },
+    {
+      "key": "vehicleId",
+      "value": "PASTE_VEHICLE_ID_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health Check / Root",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Cek apakah server Express berjalan dengan baik"
+      }
+    },
+    {
+      "name": "Zones",
+      "item": [
+        {
+          "name": "1. GET All Zones (dengan parked_count)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zones"]
+            },
+            "description": "Mengambil semua zona beserta jumlah kendaraan yang sedang terparkir dan sisa kapasitas"
+          }
+        },
+        {
+          "name": "2. GET Zone by ID (dengan list kendaraan)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/zones/{{zoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zones", "{{zoneId}}"]
+            },
+            "description": "Detail zona tertentu beserta daftar kendaraan parked di dalamnya. Ganti {{zoneId}} dengan ID zona nyata."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "1. POST Tambah Kendaraan Masuk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plate_number\": \"B 1234 XYZ\",\n  \"model\": \"Honda Vario 160\",\n  \"zone_id\": \"{{zoneId}}\",\n  \"notes\": \"Helm merah ditaruh di spion kiri\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles"]
+            },
+            "description": "Mencatat kendaraan masuk baru dengan status awal 'parked'. Catatan: pastikan isi zone_id dengan ID zona yang valid."
+          }
+        },
+        {
+          "name": "2. GET All Vehicles (Semua Kendaraan)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles"]
+            },
+            "description": "Mengambil seluruh riwayat kendaraan join dengan nama zona"
+          }
+        },
+        {
+          "name": "3. GET Vehicles by Status (parked)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles?status=parked",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "parked"
+                }
+              ]
+            },
+            "description": "Filter hanya kendaraan yang sedang parkir saat ini"
+          }
+        },
+        {
+          "name": "4. GET Vehicles with Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles?search=1234",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "1234"
+                }
+              ]
+            },
+            "description": "Pencarian berdasarkan plat nomor atau tipe/model kendaraan"
+          }
+        },
+        {
+          "name": "5. GET Vehicle by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles", "{{vehicleId}}"]
+            },
+            "description": "Detail 1 kendaraan beserta data zonanya"
+          }
+        },
+        {
+          "name": "6. PUT Update Kendaraan (Keluar / Pindah Zona / Catatan)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"exited\",\n  \"notes\": \"Keluar jam 14.30 via pos barat\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles", "{{vehicleId}}"]
+            },
+            "description": "Ubah status menjadi 'exited' saat kendaraan keluar, atau update lokasi zone_id / notes"
+          }
+        },
+        {
+          "name": "7. DELETE Hapus Kendaraan",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "vehicles", "{{vehicleId}}"]
+            },
+            "description": "Hapus catatan kendaraan dari sistem"
+          }
+        }
+      ]
+    }
+  ]
+}
+

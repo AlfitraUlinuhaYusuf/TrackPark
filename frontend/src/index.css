@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Custom plate font style */
+.font-plate {
+  font-family: monospace, system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.1em;
+}
+
