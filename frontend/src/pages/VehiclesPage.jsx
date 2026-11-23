@@ -4,19 +4,19 @@ import VehicleCard from '../components/VehicleCard';
 import ParkingSlotGrid from '../components/ParkingSlotGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
-import { Search, RefreshCw, Bike, Plus, X, Layers, LayoutGrid } from 'lucide-react';
+import { Search, RefreshCw, Bike, Plus, X, LayoutGrid } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { parseVehicleData } from '../services/formatters';
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState([]);
   const [zones, setZones] = useState([]);
-  const [selectedZoneId, setSelectedZoneId] = useState(''); // '' = semua, atau ID zona tertentu
+  const [selectedZoneId, setSelectedZoneId] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Ambil data kendaraan dan zona
   const fetchData = async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
     else setLoading(true);
@@ -37,7 +37,6 @@ export default function VehiclesPage() {
       if (zonesRes.success) {
         const loadedZones = zonesRes.data || [];
         setZones(loadedZones);
-        // Default pilih zona pertama jika belum ada yang dipilih
         if (!selectedZoneId && loadedZones.length > 0) {
           setSelectedZoneId(loadedZones[0].id);
         }
@@ -61,20 +60,31 @@ export default function VehiclesPage() {
   // Handler saat mengeluarkan motor langsung dari popup denah
   const handleVehicleExit = async (vehicleId) => {
     try {
-      await api.updateVehicle(vehicleId, { status: 'exited' });
+      const target = vehicles.find((v) => v.id === vehicleId);
+      const nowIso = new Date().toISOString();
+      const { slotCode, cleanNotes } = parseVehicleData(target);
+      
+      let exitNotes = `[Keluar: ${nowIso}]`;
+      if (slotCode) exitNotes = `[Slot ${slotCode}] ${exitNotes}`;
+      if (cleanNotes) exitNotes = `${exitNotes} ${cleanNotes}`;
+
+      await api.updateVehicle(vehicleId, {
+        status: 'exited',
+        exit_time: nowIso,
+        notes: exitNotes,
+      });
+
       fetchData(true);
     } catch (err) {
       alert(`Gagal mengeluarkan motor: ${err.message}`);
     }
   };
 
-  // Cari zona aktif yang dipilih untuk denah kotak-kotak kolom parkir
   const activeZone = zones.find((z) => z.id === selectedZoneId) || zones[0];
   const activeZoneVehicles = activeZone
     ? vehicles.filter((v) => v.zone_id === activeZone.id)
     : vehicles;
 
-  // Filter list motor yang ditampilkan di bawah denah
   const filteredVehicles = selectedZoneId
     ? vehicles.filter((v) => v.zone_id === selectedZoneId)
     : vehicles;
@@ -157,7 +167,7 @@ export default function VehiclesPage() {
         </div>
       )}
 
-      {/* 1. BAGIAN ATAS: DENAH KOTAK-KOTAK KOLOM PARKIR (SEAT BOOKING STYLE) */}
+      {/* 1. BAGIAN ATAS: DENAH KOTAK-KOTAK KOLOM PARKIR */}
       {!loading && activeZone && (
         <section className="space-y-2 animate-fadeIn">
           <ParkingSlotGrid
@@ -168,7 +178,7 @@ export default function VehiclesPage() {
         </section>
       )}
 
-      {/* 2. BAGIAN BAWAH: LIST MOTOR TERPARKIR (DENGAN PENCARIAN) */}
+      {/* 2. BAGIAN BAWAH: LIST MOTOR TERPARKIR */}
       <section className="space-y-4 pt-4 border-t border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -183,7 +193,6 @@ export default function VehiclesPage() {
             </p>
           </div>
 
-          {/* Bar Pencarian */}
           <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -204,7 +213,6 @@ export default function VehiclesPage() {
           </div>
         </div>
 
-        {/* Konten List Kendaraan */}
         {loading ? (
           <LoadingSpinner message="Mengambil data kendaraan..." />
         ) : error ? (

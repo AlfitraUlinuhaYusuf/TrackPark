@@ -6,6 +6,7 @@ import ParkingSlotGrid from '../components/ParkingSlotGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import { Layers, Bike, Plus } from 'lucide-react';
+import { parseVehicleData } from '../services/formatters';
 
 export default function ZoneDetailPage() {
   const { id } = useParams();
@@ -37,7 +38,20 @@ export default function ZoneDetailPage() {
 
   const handleVehicleExit = async (vehicleId) => {
     try {
-      await api.updateVehicle(vehicleId, { status: 'exited' });
+      const target = zone?.vehicles?.find((v) => v.id === vehicleId);
+      const nowIso = new Date().toISOString();
+      const { slotCode, cleanNotes } = parseVehicleData(target);
+      
+      let exitNotes = `[Keluar: ${nowIso}]`;
+      if (slotCode) exitNotes = `[Slot ${slotCode}] ${exitNotes}`;
+      if (cleanNotes) exitNotes = `${exitNotes} ${cleanNotes}`;
+
+      await api.updateVehicle(vehicleId, {
+        status: 'exited',
+        exit_time: nowIso,
+        notes: exitNotes,
+      });
+
       fetchZoneDetail();
     } catch (err) {
       alert(`Gagal mengeluarkan motor: ${err.message}`);

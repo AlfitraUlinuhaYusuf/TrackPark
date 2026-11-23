@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, MapPin, ChevronRight, FileText, CheckCircle2, LogOut } from 'lucide-react';
+import { Clock, MapPin, ChevronRight, FileText, LogOut, CheckCircle2 } from 'lucide-react';
 import { parseVehicleData, formatTime, formatDate } from '../services/formatters';
 
 export default function VehicleCard({ vehicle }) {
@@ -50,8 +50,8 @@ export default function VehicleCard({ vehicle }) {
         </div>
       </div>
 
-      {/* Lokasi Blok & Info Waktu */}
-      <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+      {/* Lokasi Blok & Waktu */}
+      <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-blue-700 font-medium bg-blue-50 px-2 py-0.5 rounded-md">
             <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
@@ -60,26 +60,45 @@ export default function VehicleCard({ vehicle }) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-slate-500">
-            <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="text-[11px]">
-              Masuk: {formatTime(entryDate)}
-            </span>
-          </div>
+          {/* Jika Masih Parkir: Tampilkan jam masuk */}
+          {isParked && (
+            <div className="flex items-center gap-1 text-slate-500">
+              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="text-[11px]">
+                Masuk: {formatTime(entryDate)}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Info Waktu Keluar & Durasi (Jika Status Selesai Parkir / Exited) */}
-        {!isParked && exitDate && (
-          <div className="flex items-center justify-between text-[11px] bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <span className="text-rose-700 font-medium flex items-center gap-1">
-              <LogOut className="w-3 h-3 text-rose-500" />
-              Keluar: {formatTime(exitDate)}, {formatDate(exitDate)}
-            </span>
-            {durationStr && (
-              <span className="font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
-                {durationStr}
+        {/* TAMPILAN KHUSUS KENDARAAN KELUAR / RIWAYAT (DURASI PARKIR PASTI TERHENTI) */}
+        {!isParked && (
+          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 space-y-1.5">
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div>
+                <span className="text-slate-400 text-[10px] block font-medium">Waktu Masuk:</span>
+                <span className="font-bold text-slate-700">
+                  {formatTime(entryDate)} ({formatDate(entryDate)})
+                </span>
+              </div>
+
+              <div>
+                <span className="text-rose-500 text-[10px] block font-medium">Waktu Keluar:</span>
+                <span className="font-bold text-rose-700">
+                  {exitDate ? `${formatTime(exitDate)} (${formatDate(exitDate)})` : 'Selesai'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+              <span className="text-slate-500 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-emerald-600" />
+                Durasi Parkir:
               </span>
-            )}
+              <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                {durationStr || 'Selesai'}
+              </span>
+            </div>
           </div>
         )}
       </div>

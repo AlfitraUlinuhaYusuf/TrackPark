@@ -23,9 +23,13 @@ CREATE TABLE IF NOT EXISTS vehicles (
     zone_id UUID REFERENCES zones(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'parked' CHECK (status IN ('parked', 'exited')),
     entry_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    exit_time TIMESTAMPTZ,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Jika tabel vehicles sudah ada sebelumnya, tambahkan kolom exit_time:
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS exit_time TIMESTAMPTZ;
 
 -- 3. Indeks untuk Optimasi Query
 CREATE INDEX IF NOT EXISTS idx_vehicles_status ON vehicles(status);
@@ -39,4 +43,3 @@ INSERT INTO zones (name, capacity, description) VALUES
 ('Zona B - Motor Bebek & Kopling', 15, 'Area parkir sepeda motor manual dan kopling di sisi timur'),
 ('Zona C - VIP & Karyawan', 10, 'Area parkir khusus pengunjung VIP dan staf kantor')
 ON CONFLICT DO NOTHING;
-

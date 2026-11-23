@@ -5,37 +5,53 @@
 export function parseVehicleData(vehicle) {
   if (!vehicle) return {};
 
+  const isParked = vehicle.status === 'parked';
   const entryDate = vehicle.entry_time ? new Date(vehicle.entry_time) : null;
   let exitDate = vehicle.exit_time ? new Date(vehicle.exit_time) : null;
 
-  // Cek apakah waktu keluar tersimpan di dalam tag catatan [Keluar: ...]
+  // 1. Ekstrak waktu keluar jika tersimpan di dalam tag catatan [Keluar: ...]
   if (!exitDate && vehicle.notes) {
-    const match = vehicle.notes.match(/\[Keluar:\s*([^\]]+)\]/i);
-    if (match && match[1]) {
-      const parsed = new Date(match[1]);
+    const matchIso = vehicle.notes.match(/\[Keluar:\s*([^\]]+)\]/i);
+    if (matchIso && matchIso[1]) {
+      const parsed = new Date(matchIso[1]);
       if (!isNaN(parsed.getTime())) {
         exitDate = parsed;
       }
     }
-  }
 
-  // Hitung durasi parkir
-  let durationStr = null;
-  if (entryDate) {
-    const endDate = exitDate || new Date();
-    const diffMs = Math.max(0, endDate.getTime() - entryDate.getTime());
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMinutes / 60);
-    const minutes = diffMinutes % 60;
-
-    if (hours > 0) {
-      durationStr = `${hours} jam ${minutes} menit`;
-    } else {
-      durationStr = `${Math.max(1, minutes)} menit`;
+    if (!exitDate) {
+      const matchGeneral = vehicle.notes.match(/(?:waktu\s*)?keluar\s*[:=]\s*([0-9T:\-+.Z\s]+)/i);
+      if (matchGeneral && matchGeneral[1]) {
+        const parsed = new Date(matchGeneral[1]);
+        if (!isNaN(parsed.getTime())) {
+          exitDate = parsed;
+        }
+      }
     }
   }
 
-  // Cek apakah slot parkir spesifik tersimpan di dalam tag [Slot: ...] atau [Slot ...]
+  // 2. Hitung durasi parkir:
+  // - JIKA MASIH PARKIR (status === 'parked'): durasi berjalan dari entryDate s/d waktu sekarang
+  // - JIKA SUDAH KELUAR (status === 'exited'): durasi HARUS TERHENTI pada exitDate!
+  let durationStr = null;
+  if (entryDate) {
+    if (isParked) {
+      // Masih parkir (live duration)
+      const diffMs = Math.max(0, new Date().getTime() - entryDate.getTime());
+      durationStr = formatDuration(diffMs);
+    } else {
+      // SUDAH KELUAR -> Durasi terkunci pada saat motor checkout keluar
+      if (exitDate) {
+        const diffMs = Math.max(0, exitDate.getTime() - entryDate.getTime());
+        durationStr = formatDuration(diffMs);
+      } else {
+        // Fallback untuk data lama tanpa timestamp keluar: JANGAN pakai new Date() agar jam tidak terus lanjut!
+        durationStr = 'Selesai Parkir';
+      }
+    }
+  }
+
+  // 3. Cek apakah slot parkir spesifik tersimpan di dalam tag [Slot: ...] atau [Slot ...]
   let slotCode = null;
   if (vehicle.notes) {
     const matchSlot = vehicle.notes.match(/\[Slot:?\s*([^\]]+)\]/i);
@@ -44,11 +60,12 @@ export function parseVehicleData(vehicle) {
     }
   }
 
-  // Bersihkan teks catatan dari tag internal [Slot ...] dan [Keluar: ...]
+  // 4. Bersihkan teks catatan dari tag internal [Slot ...] dan [Keluar: ...]
   const cleanNotes = vehicle.notes
     ? vehicle.notes
         .replace(/\[Slot:?\s*[^\]]+\]/gi, '')
         .replace(/\[Keluar:\s*[^\]]+\]/gi, '')
+        .replace(/\(Keluar:\s*[^)]+\)/gi, '')
         .trim()
     : '';
 
@@ -58,7 +75,19 @@ export function parseVehicleData(vehicle) {
     durationStr,
     slotCode,
     cleanNotes,
+    isParked,
   };
+}
+
+function formatDuration(diffMs) {
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours} jam ${minutes} menit`;
+  }
+  return `${Math.max(1, minutes)} menit`;
 }
 
 export function formatTime(date) {
@@ -85,4 +114,3 @@ export function formatDate(date) {
     return '-';
   }
 }
-

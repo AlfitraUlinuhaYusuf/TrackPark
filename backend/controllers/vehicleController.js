@@ -11,13 +11,7 @@ const getAllVehicles = async (req, res) => {
     let query = supabase
       .from('vehicles')
       .select(`
-        id,
-        plate_number,
-        model,
-        zone_id,
-        status,
-        entry_time,
-        notes,
+        *,
         zones (
           id,
           name,
@@ -75,13 +69,7 @@ const getVehicleById = async (req, res) => {
     const { data: vehicle, error } = await supabase
       .from('vehicles')
       .select(`
-        id,
-        plate_number,
-        model,
-        zone_id,
-        status,
-        entry_time,
-        notes,
+        *,
         zones (
           id,
           name,
@@ -212,13 +200,7 @@ const createVehicle = async (req, res) => {
       .from('vehicles')
       .insert([newVehicle])
       .select(`
-        id,
-        plate_number,
-        model,
-        zone_id,
-        status,
-        entry_time,
-        notes,
+        *,
         zones (
           id,
           name
@@ -258,7 +240,7 @@ const createVehicle = async (req, res) => {
 const updateVehicle = async (req, res) => {
   try {
     const { id } = req.params;
-    const { zone_id, notes, status, model, plate_number } = req.body;
+    const { zone_id, notes, status, model, plate_number, exit_time } = req.body;
 
     const { data: existing, error: findError } = await supabase
       .from('vehicles')
@@ -293,12 +275,15 @@ const updateVehicle = async (req, res) => {
       }
       updatePayload.status = lowerStatus;
 
-      // Otomatis catat waktu keluar jika belum ada di notes
+      // Otomatis catat waktu keluar jika diubah menjadi 'exited'
       if (lowerStatus === 'exited') {
+        const nowIso = new Date().toISOString();
+        const exitTimeVal = exit_time || nowIso;
+        updatePayload.exit_time = exitTimeVal;
+
         const currentNotes = notes !== undefined ? notes : (existing.notes || '');
         if (!currentNotes.includes('[Keluar:')) {
-          const nowIso = new Date().toISOString();
-          updatePayload.notes = currentNotes ? `${currentNotes} [Keluar: ${nowIso}]` : `[Keluar: ${nowIso}]`;
+          updatePayload.notes = currentNotes ? `${currentNotes} [Keluar: ${exitTimeVal}]` : `[Keluar: ${exitTimeVal}]`;
         }
       }
     }
@@ -338,24 +323,32 @@ const updateVehicle = async (req, res) => {
       });
     }
 
-    const { data: updatedVehicle, error: updateError } = await supabase
+    // Eksekusi update ke Supabase (dengan graceful fallback jika kolom exit_time belum dibuat)
+    let updatedVehicle = null;
+    let updateError = null;
+
+    const attempt = await supabase
       .from('vehicles')
       .update(updatePayload)
       .eq('id', id)
-      .select(`
-        id,
-        plate_number,
-        model,
-        zone_id,
-        status,
-        entry_time,
-        notes,
-        zones (
-          id,
-          name
-        )
-      `)
+      .select('*, zones(id, name)')
       .single();
+
+    if (attempt.error && attempt.error.message?.includes('exit_time')) {
+      // Jika kolom exit_time tidak ada di tabel Supabase, hapus dari payload dan update via notes
+      delete updatePayload.exit_time;
+      const fallback = await supabase
+        .from('vehicles')
+        .update(updatePayload)
+        .eq('id', id)
+        .select('*, zones(id, name)')
+        .single();
+      updatedVehicle = fallback.data;
+      updateError = fallback.error;
+    } else {
+      updatedVehicle = attempt.data;
+      updateError = attempt.error;
+    }
 
     if (updateError) {
       return res.status(500).json({
