@@ -180,10 +180,85 @@ const createVehicle = async (req, res) => {
       .eq('status', 'parked');
 
     if (!countError && targetZone.capacity && currentParkedCount >= targetZone.capacity) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: `Kapasitas zona ${targetZone.name} sudah penuh (${currentParkedCount}/${targetZone.capacity})!`,
+        message: `Konflik: Kapasitas zona ${targetZone.name} sudah penuh (${currentParkedCount}/${targetZone.capacity})!`,
       });
+    }
+
+    // 2.1 Cek apakah ada penanda slot spesifik (misal: [Slot B-01] atau [Slot 01]) di dalam notes
+    let requestedSlotCode = null;
+    if (notes) {
+      const matchSlot = notes.match(/\[Slot:?\s*([^\]]+)\]/i);
+      if (matchSlot && matchSlot[1]) {
+        requestedSlotCode = matchSlot[1].trim();
+      }
+    }
+
+    if (requestedSlotCode) {
+      // Ambil semua kendaraan yang saat ini sedang parkir (status = parked) di zona ini
+      const { data: parkedInZone, error: parkedZoneError } = await supabase
+        .from('vehicles')
+        .select('id, plate_number, notes')
+        .eq('zone_id', zone_id)
+        .eq('status', 'parked');
+
+      if (!parkedZoneError && parkedInZone && parkedInZone.length > 0) {
+        // Cek apakah slot tersebut sudah terisi
+        // Logika slot sama persis dengan ParkingSlotGrid:
+        const capacity = Number(targetZone.capacity) || 10;
+        const zonePrefix = targetZone.name ? targetZone.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() : 'Z';
+
+        const slotOccupancyMap = {};
+        const unassignedVehicles = [];
+
+        parkedInZone.forEach((v) => {
+          let vSlotCode = null;
+          if (v.notes) {
+            const m = v.notes.match(/\[Slot:?\s*([^\]]+)\]/i);
+            if (m && m[1]) vSlotCode = m[1].trim();
+          }
+
+          let assigned = false;
+          if (vSlotCode) {
+            const numMatch = vSlotCode.match(/(\d+)/);
+            if (numMatch) {
+              const slotNum = parseInt(numMatch[1], 10);
+              if (slotNum >= 1 && slotNum <= capacity && !slotOccupancyMap[slotNum]) {
+                slotOccupancyMap[slotNum] = v;
+                assigned = true;
+              }
+            }
+          }
+
+          if (!assigned) {
+            unassignedVehicles.push(v);
+          }
+        });
+
+        // Alokasikan kendaraan yang belum punya slot khusus ke slot kosong pertama
+        let unassignedIndex = 0;
+        for (let i = 1; i <= capacity; i++) {
+          if (!slotOccupancyMap[i] && unassignedIndex < unassignedVehicles.length) {
+            slotOccupancyMap[i] = unassignedVehicles[unassignedIndex];
+            unassignedIndex++;
+          }
+        }
+
+        // Cari nomor slot yang diminta
+        const reqNumMatch = requestedSlotCode.match(/(\d+)/);
+        if (reqNumMatch) {
+          const reqSlotNum = parseInt(reqNumMatch[1], 10);
+          const occupyingVehicle = slotOccupancyMap[reqSlotNum];
+
+          if (occupyingVehicle) {
+            return res.status(409).json({
+              success: false,
+              message: `Konflik: Slot ${requestedSlotCode} di ${targetZone.name} baru saja ditempati oleh kendaraan ${occupyingVehicle.plate_number}! Silakan refresh denah dan pilih slot lain.`,
+            });
+          }
+        }
+      }
     }
 
     // 3. Simpan data kendaraan baru

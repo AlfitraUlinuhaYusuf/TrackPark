@@ -116,6 +116,17 @@ export default function AddVehiclePage() {
       }
     } catch (err) {
       setErrorMessage(err.message);
+      // Jika terjadi konflik atau error kapasitas, otomatis segarkan data denah & kendaraan terbaru dari server
+      try {
+        const [zonesRes, vehiclesRes] = await Promise.all([
+          api.getZones(),
+          api.getVehicles({ status: 'parked' }),
+        ]);
+        if (zonesRes.success && zonesRes.data) setZones(zonesRes.data);
+        if (vehiclesRes.success && vehiclesRes.data) setVehicles(vehiclesRes.data);
+        // Lepaskan pilihan slot yang tadi bentrok agar petugas memilih slot lain yang masih hijau
+        setSelectedSlotCode(null);
+      } catch (_) {}
     } finally {
       setSubmitting(false);
     }
