@@ -6,28 +6,27 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Cek apakah halaman adalah halaman detail (memerlukan tombol kembali)
   const isDetailPage =
     location.pathname.startsWith('/vehicles/') ||
     (location.pathname.startsWith('/zones/') && location.pathname !== '/zones');
 
-  // Judul dinamis berdasarkan rute
   const getTitle = () => {
-    if (location.pathname === '/vehicles') return 'Monitoring Parkir & Denah Kolom';
+    if (location.pathname === '/vehicles') return 'Daftar Motor Terparkir';
     if (location.pathname.startsWith('/vehicles/')) return 'Detail Kendaraan';
     if (location.pathname === '/zones') return 'Kapasitas Blok Parkir';
-    if (location.pathname.startsWith('/zones/')) return 'Detail Blok Parkir';
-    if (location.pathname === '/add') return 'Catat Motor Masuk Baru';
+    if (location.pathname.startsWith('/zones/')) return 'Denah & Detail Blok';
+    if (location.pathname === '/add') return 'Catat Motor Masuk';
     if (location.pathname === '/history') return 'Riwayat Kendaraan Keluar';
     if (location.pathname === '/about') return 'Tentang Sistem TrackPark';
     return 'TrackPark';
   };
 
   const getSubtitle = () => {
-    if (location.pathname === '/vehicles') return 'Denah kotak parkir interaktif ala seat view & sirkulasi aktif';
-    if (location.pathname === '/zones') return 'Monitoring okupansi dan sisa slot per blok parkir';
-    if (location.pathname === '/add') return 'Input data motor dan alokasikan slot parkir';
-    if (location.pathname === '/history') return 'Log pencatatan seluruh kendaraan yang telah keluar';
+    if (location.pathname === '/vehicles') return 'Pencarian plat nomor & pemantauan motor aktif';
+    if (location.pathname === '/zones') return 'Monitoring kuota dan sisa kapasitas blok parkir';
+    if (location.pathname.startsWith('/zones/')) return 'Peta denah visual slot dan kendaraan di blok ini';
+    if (location.pathname === '/add') return 'Input kendaraan baru dan alokasikan ke slot parkir';
+    if (location.pathname === '/history') return 'Log catatan seluruh motor yang telah selesai keluar';
     return 'TrackPark Parking Management System';
   };
 

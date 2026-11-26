@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import VehicleCard from '../components/VehicleCard';
 import ParkingSlotGrid from '../components/ParkingSlotGrid';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
-import { Layers, Bike, Plus } from 'lucide-react';
+import { Layers, Bike } from 'lucide-react';
 import { parseVehicleData } from '../services/formatters';
 
 export default function ZoneDetailPage() {
@@ -120,7 +120,7 @@ export default function ZoneDetailPage() {
         </div>
       </div>
 
-      {/* 1. DENAH KOTAK-KOTAK KOLOM PARKIR INTERAKTIF */}
+      {/* 1. DENAH KOTAK-KOTAK KOLOM PARKIR INTERAKTIF (EKSKLUSIF DI SINI) */}
       <section className="space-y-2">
         <ParkingSlotGrid
           zone={zone}
@@ -131,23 +131,14 @@ export default function ZoneDetailPage() {
 
       {/* 2. DAFTAR MOTOR DI BAWAH DENAH */}
       <section className="space-y-4 pt-4 border-t border-slate-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-extrabold text-slate-800 text-base md:text-lg flex items-center gap-2">
-              <Bike className="w-5 h-5 text-blue-600" />
-              Daftar Motor di {zone.name} ({vehicles.length})
-            </h3>
-            <p className="text-xs text-slate-500">
-              Seluruh motor yang menempati slot di blok ini
-            </p>
-          </div>
-          <Link
-            to="/add"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Tambah</span>
-          </Link>
+        <div>
+          <h3 className="font-extrabold text-slate-800 text-base md:text-lg flex items-center gap-2">
+            <Bike className="w-5 h-5 text-blue-600" />
+            Daftar Motor di {zone.name} ({vehicles.length})
+          </h3>
+          <p className="text-xs text-slate-500">
+            Daftar seluruh kendaraan yang menempati slot di blok ini
+          </p>
         </div>
 
         {vehicles.length === 0 ? (

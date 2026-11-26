@@ -16,15 +16,14 @@ import AboutPage from './pages/AboutPage';
 export default function App() {
   const location = useLocation();
 
-  // Sinkronisasi judul tab browser secara dinamis sesuai halaman
   useEffect(() => {
     const path = location.pathname;
     let pageTitle = 'TrackPark - Sistem Parkir Petugas';
 
-    if (path === '/vehicles') pageTitle = 'TrackPark - Motor Terparkir & Denah';
+    if (path === '/vehicles') pageTitle = 'TrackPark - Motor Terparkir';
     else if (path.startsWith('/vehicles/')) pageTitle = 'TrackPark - Detail Kendaraan';
     else if (path === '/zones') pageTitle = 'TrackPark - Kapasitas Blok Parkir';
-    else if (path.startsWith('/zones/')) pageTitle = 'TrackPark - Detail Blok';
+    else if (path.startsWith('/zones/')) pageTitle = 'TrackPark - Denah Blok';
     else if (path === '/add') pageTitle = 'TrackPark - Catat Motor Masuk';
     else if (path === '/history') pageTitle = 'TrackPark - Riwayat Parkir';
     else if (path === '/about') pageTitle = 'TrackPark - Tentang Sistem';
@@ -34,14 +33,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-row selection:bg-blue-200">
-      {/* Desktop Persistent Sidebar (Muncul di layar md ke atas) */}
       <Sidebar />
 
-      {/* Main App Container: Responsif, Lebar di Desktop & Rapi di Mobile */}
       <div className="w-full flex-1 flex flex-col min-h-screen bg-slate-50 shadow-xs border-r border-slate-200">
         <Navbar />
 
-        {/* Konten Halaman */}
         <main className="flex-1 pb-24 md:pb-8 overflow-y-auto">
           <div className="w-full max-w-7xl mx-auto">
             <Routes>
@@ -58,7 +54,6 @@ export default function App() {
           </div>
         </main>
 
-        {/* Mobile Bottom Navigation (Hanya muncul di Mobile / Layar Kecil) */}
         <BottomNav />
       </div>
     </div>

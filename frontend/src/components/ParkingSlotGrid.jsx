@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bike, CheckCircle, ExternalLink, LogOut, ArrowRight, X } from 'lucide-react';
+import { Bike, CheckCircle, ExternalLink, LogOut, X } from 'lucide-react';
 import { parseVehicleData, formatTime, formatDate } from '../services/formatters';
 
 export default function ParkingSlotGrid({
@@ -21,7 +21,6 @@ export default function ParkingSlotGrid({
   // 1. Petakan kendaraan aktif (parked) ke nomor slot
   const parkedVehicles = vehicles.filter((v) => v.status === 'parked');
   
-  // Array slot terisi [slotNumber -> vehicle]
   const slotOccupancyMap = {};
   const unassignedVehicles = [];
 
@@ -30,7 +29,6 @@ export default function ParkingSlotGrid({
     let assigned = false;
 
     if (slotCode) {
-      // Coba ekstrak angka dari slotCode, misal A-03 -> 3
       const numMatch = slotCode.match(/(\d+)/);
       if (numMatch) {
         const slotNum = parseInt(numMatch[1], 10);
@@ -74,14 +72,13 @@ export default function ParkingSlotGrid({
 
   const handleSlotClick = (slot) => {
     if (isSelectMode) {
-      if (slot.isOccupied) return; // Slot terisi tidak bisa dipilih
+      if (slot.isOccupied) return;
       if (onSelectSlot) {
         onSelectSlot(slot.slotCode);
       }
       return;
     }
 
-    // Mode View: buka modal detail
     setActiveSlotModal(slot);
   };
 
@@ -92,7 +89,7 @@ export default function ParkingSlotGrid({
         <div>
           <div className="flex items-center gap-1.5">
             <h3 className="font-extrabold text-slate-900 text-sm md:text-base">
-              {isSelectMode ? 'Pilih Kotak Slot Parkir' : `Denah Slot ${zone?.name || ''}`}
+              {isSelectMode ? 'Pilih Kotak Slot Parkir' : `Denah Kolom Parkir ${zone?.name || ''}`}
             </h3>
             <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-200">
               {capacity} Slot
@@ -101,7 +98,7 @@ export default function ParkingSlotGrid({
           <p className="text-[11px] text-slate-500">
             {isSelectMode
               ? 'Klik salah satu kotak hijau yang kosong untuk menentukan posisi motor'
-              : 'Klik kotak merah untuk lihat detail motor, hijau untuk slot kosong'}
+              : 'Klik kotak merah untuk melihat identitas motor yang sedang parkir'}
           </p>
         </div>
 
@@ -123,7 +120,6 @@ export default function ParkingSlotGrid({
       </div>
 
       {/* Grid Denah Tempat Parkir Compact & Posisi Konsisten */}
-      {/* 5 Kolom di HP, 10 Kolom di Layar Lebar agar tidak loncat atau terlalu besar */}
       <div className="bg-slate-50/90 rounded-2xl p-3 border border-dashed border-slate-200 flex justify-center">
         <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2 justify-items-center w-full max-w-2xl">
           {slots.map((slot) => {
@@ -152,7 +148,7 @@ export default function ParkingSlotGrid({
                     : 'bg-white border-emerald-200 text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50/60'
                 } ${isSelectMode && slot.isOccupied ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {/* Kode Slot Ringkas: misal A01 */}
+                {/* Kode Slot Ringkas */}
                 <span
                   className={`text-[9px] font-mono font-black tracking-tighter ${
                     isSelected
@@ -322,18 +318,14 @@ export default function ParkingSlotGrid({
                     Slot {activeSlotModal.slotCode} Masih Kosong
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    Slot ini siap ditempati motor yang baru masuk.
+                    Slot ini siap ditempati motor berikutnya yang masuk.
                   </p>
                 </div>
                 <button
-                  onClick={() => {
-                    setActiveSlotModal(null);
-                    navigate(`/add?zone_id=${zone?.id}&slot=${activeSlotModal.slotCode}`);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition active:scale-95"
+                  onClick={() => setActiveSlotModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
                 >
-                  <span>Catat Motor di Sini</span>
-                  <ArrowRight className="w-4 h-4" />
+                  Tutup
                 </button>
               </div>
             )}
